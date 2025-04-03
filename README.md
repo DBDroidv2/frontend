@@ -1,6 +1,6 @@
 # Knot Dashboard App
 
-<img src="./star.svg" alt="Animated Background" style="width: 100%; max-width: 800px;">
+<img src="https://raw.githubusercontent.com/DBDroidv2/frontend/master/star.svg" alt="Animated Background" style="width: 100%; max-width: 800px;">
 
 ---
 
@@ -43,7 +43,7 @@
 
 1.  Clone the repo
     ```bash
-    git clone [https://github.com/DBDroidv2/frontend.git](https://www.google.com/search?q=https://github.com/DBDroidv2/frontend.git)
+    git clone [https://github.com/DBDroidv2/frontend.git](https://github.com/DBDroidv2/frontend.git)
     ```
 2.  Navigate to the project directory
     ```bash
