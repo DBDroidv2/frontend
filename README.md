@@ -1,6 +1,6 @@
 # Knot Dashboard App
 
-<svg width="400" height="300" style="background-color:#000;">
+<svg width="400" height="300" style="background-color:#000; display: block; margin: 20px auto;">
   <defs>
     <radialGradient id="starGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
       <stop offset="0%" stop-color="white" stop-opacity="1"/>
