@@ -17,6 +17,7 @@ import {
   Map, // Import Map icon for Roadmap
   ChevronsLeft, // Icon for collapse
   ChevronsRight, // Icon for expand
+  Bot, // Added Bot icon for AI Chat
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -120,6 +121,7 @@ export default function DashboardLayout({
     { href: '/dashboard/terminal', label: 'Terminal', icon: TerminalSquare },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+    { href: '/dashboard/ai-chat', label: 'AI Chat', icon: Bot }, // Added AI Chat link
     { href: '/about', label: 'About', icon: Info }, // Updated About link path
     { href: '/contact', label: 'Contact', icon: Mail }, // Added Contact link
     { href: '/roadmap', label: 'Roadmap', icon: Map }, // Added Roadmap link

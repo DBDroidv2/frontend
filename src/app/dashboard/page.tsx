@@ -16,6 +16,8 @@ import { IpDisplayWidget } from '@/components/ip-display-widget'; // Import IP W
 import React from 'react'; // Import React for useEffect
 import { motion } from 'framer-motion'; // Import motion
 import Image from 'next/image'; // Import Next Image
+import { StockWidget } from '@/components/stock-widget'; // Import StockWidget
+import { WatchlistWidget } from '@/components/watchlist-widget'; // Import WatchlistWidget
 
 export default function DashboardPage() {
   const { user, isLoggingIn } = useAuth(); // Get user info and the new isLoggingIn state
@@ -131,6 +133,16 @@ export default function DashboardPage() {
              />
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* Stock Widget */}
+      <motion.div variants={itemVariants}>
+        <StockWidget />
+      </motion.div>
+
+      {/* Watchlist Widget */}
+      <motion.div variants={itemVariants}>
+        <WatchlistWidget />
       </motion.div>
 
       {/* Add more widgets here as needed */}

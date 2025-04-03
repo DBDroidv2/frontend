@@ -11,6 +11,7 @@ interface User {
   createdAt?: string; // Optional, from backend
   loginHistory?: LoginHistoryEntry[]; // Added
   displayName?: string | null; // Added
+  watchlist?: string[]; // Added watchlist
   // Removed lastLoginIp, lastLoginAt
 }
 
@@ -32,6 +33,7 @@ interface BackendUserProfile {
   createdAt?: string;
   loginHistory?: LoginHistoryEntry[]; // Added
   displayName?: string | null; // Added
+  watchlist?: string[]; // Added watchlist
   // Removed lastLoginIp, lastLoginAt
 }
 
@@ -45,6 +47,9 @@ interface AuthContextType {
   // Allow login to optionally update user data without a new token
   login: (newToken: string | null, userData: User) => Promise<void>;
   logout: () => void;
+  // Functions to manage watchlist
+  addToWatchlist: (symbol: string) => Promise<void>;
+  removeFromWatchlist: (symbol: string) => Promise<void>;
 }
 
 // Create the context with a default value (or undefined and check for it)
@@ -118,6 +123,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Only set state if both token and valid parsed user exist
     if (storedToken && parsedUser) {
+        // Basic check for watchlist existence in parsed data
+        if (!parsedUser.watchlist) {
+            parsedUser.watchlist = []; // Initialize if missing
+        }
         // TODO: Add token validation logic here (e.g., check expiry, call a backend verify endpoint)
         setToken(storedToken);
         setUser(parsedUser);
@@ -168,11 +177,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Ensure fullUserData (now typed as BackendUserProfile) is valid before saving
         if (typeof fullUserData === 'object' && fullUserData !== null && fullUserData._id && fullUserData.email) {
-            // Map _id to id for frontend consistency
-            const frontendUser: User = { ...fullUserData, id: fullUserData._id };
-            localStorage.setItem('authUser', JSON.stringify(frontendUser)); // Save mapped data with 'id'
-            setUser(frontendUser); // Set state with mapped data ('id' field)
-            console.log("[AuthContext] Full user profile fetched and context updated:", fullUserData);
+            // Map _id to id and ensure watchlist is an array
+            const frontendUser: User = {
+                ...fullUserData,
+                id: fullUserData._id,
+                watchlist: fullUserData.watchlist || [] // Ensure watchlist is always an array
+            };
+            localStorage.setItem('authUser', JSON.stringify(frontendUser)); // Save mapped data with 'id' and watchlist
+            setUser(frontendUser); // Set state with mapped data ('id' field and watchlist)
+            console.log("[AuthContext] Full user profile fetched and context updated:", frontendUser); // Log frontendUser
         } else {
             console.error("[AuthContext] Invalid full user data received after login fetch:", fullUserData);
             logout(); // Log out if user data is bad
@@ -192,6 +205,74 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Expose the memoized logout function
   const logout = handleLogout;
 
+  // --- Watchlist Management Functions ---
+  const updateLocalUserWatchlist = (newWatchlist: string[]) => {
+      setUser(currentUser => {
+          if (!currentUser) return null;
+          const updatedUser = { ...currentUser, watchlist: newWatchlist };
+          localStorage.setItem('authUser', JSON.stringify(updatedUser)); // Update local storage too
+          return updatedUser;
+      });
+  };
+
+  const addToWatchlist = async (symbol: string) => {
+      if (!token || !user) return; // Need token and user context
+      const symbolToAdd = symbol.trim().toUpperCase();
+      // Optimistic update (optional, but improves UX)
+      // updateLocalUserWatchlist([...(user.watchlist || []), symbolToAdd]);
+
+      try {
+          const response = await fetch('http://localhost:5000/api/users/watchlist', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify({ symbol: symbolToAdd }),
+          });
+          const data = await response.json();
+          if (!response.ok) {
+              throw new Error(data.message || 'Failed to add to watchlist');
+          }
+          // Update state with the confirmed list from the backend
+          updateLocalUserWatchlist(data.watchlist || []);
+      } catch (error) {
+          console.error("Error adding to watchlist:", error);
+          // Revert optimistic update if it failed (if implemented)
+          // updateLocalUserWatchlist(user.watchlist || []); // Revert to original
+          // Optionally show an error message to the user
+      }
+  };
+
+  const removeFromWatchlist = async (symbol: string) => {
+      if (!token || !user) return;
+      const symbolToRemove = symbol.trim().toUpperCase();
+      // Optimistic update (optional)
+      // const originalWatchlist = user.watchlist || [];
+      // updateLocalUserWatchlist(originalWatchlist.filter(s => s !== symbolToRemove));
+
+      try {
+          const response = await fetch(`http://localhost:5000/api/users/watchlist/${symbolToRemove}`, {
+              method: 'DELETE',
+              headers: {
+                  'Authorization': `Bearer ${token}`,
+              },
+          });
+          const data = await response.json();
+          if (!response.ok) {
+              throw new Error(data.message || 'Failed to remove from watchlist');
+          }
+          // Update state with the confirmed list from the backend
+          updateLocalUserWatchlist(data.watchlist || []);
+      } catch (error) {
+          console.error("Error removing from watchlist:", error);
+          // Revert optimistic update if it failed (if implemented)
+          // updateLocalUserWatchlist(originalWatchlist); // Revert
+          // Optionally show an error message
+      }
+  };
+
+
   const value = {
     user,
     token,
@@ -200,6 +281,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoggingOut, // Logout process check
     login,
     logout,
+    addToWatchlist, // Expose watchlist functions
+    removeFromWatchlist,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

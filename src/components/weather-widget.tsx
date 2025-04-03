@@ -1,10 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Import useCallback
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton'; // Use alias now that it's created
-import Image from 'next/image'; // For displaying weather icon
+import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
+import { // Import Tooltip components
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface WeatherData {
   city: string;
@@ -31,19 +39,25 @@ export function WeatherWidget() {
   const { token } = useAuth(); // Only need token now
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false); // State for refresh button
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchWeather = async () => {
+  // Fetch weather function, now accepts forceRefresh flag
+  const fetchWeather = useCallback(async (forceRefresh = false) => {
       if (!token) {
-        // Don't fetch if not authenticated (though backend route is protected anyway)
-        setIsLoading(false);
+        // Don't fetch if not authenticated
+        setIsLoading(false); // Ensure initial loading stops
+        setIsRefreshing(false); // Ensure refresh loading stops
         // setError("Not authenticated"); // Optional: show auth error
         return;
       }
 
-      setIsLoading(true);
-      setError(null);
+      if (forceRefresh) {
+          setIsRefreshing(true); // Indicate refresh in progress
+      } else {
+          setIsLoading(true); // Indicate initial load
+      }
+      setError(null); // Clear previous errors
 
       // 1. Get Public IP from frontend
       const publicIp = await getPublicIp();
@@ -51,19 +65,30 @@ export function WeatherWidget() {
       if (!publicIp) {
         setError("Could not determine public IP address.");
         setIsLoading(false);
+        setIsLoading(false);
+        setIsRefreshing(false);
         return;
       }
 
-      // 2. Construct backend URL with the fetched public IP
-      const apiUrl = `http://localhost:5000/api/weather?ip=${encodeURIComponent(publicIp)}`;
+      // 2. Construct backend URL, adding forceRefresh if needed
+      let apiUrl = `http://localhost:5000/api/weather?ip=${encodeURIComponent(publicIp)}`;
+      if (forceRefresh) {
+          apiUrl += '&forceRefresh=true';
+      }
 
       try {
-        console.log(`[Weather Widget] Fetching weather using public IP from: ${apiUrl}`);
+        console.log(`[Weather Widget] Fetching weather from: ${apiUrl}`);
         const response = await fetch(apiUrl, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
+
+        // Handle specific 429 Rate Limit error first
+        if (response.status === 429) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'API rate limit exceeded.'); // Use message from backend
+        }
 
         const data = await response.json();
 
@@ -76,13 +101,22 @@ export function WeatherWidget() {
       } catch (err: any) {
         console.error("Failed to fetch weather:", err);
         setError(err.message || "Could not load weather data.");
+        setWeather(null); // Clear potentially stale data on error
       } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Stop initial loading
+        setIsRefreshing(false); // Stop refresh loading
       }
-    };
+  }, [token]); // Dependency on token
 
-    fetchWeather();
-  }, [token]); // Only re-fetch if token changes
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchWeather(); // Call without forceRefresh
+  }, [fetchWeather]); // Depend on the memoized fetchWeather
+
+  // Handler for the refresh button
+  const handleRefresh = () => {
+      fetchWeather(true); // Call with forceRefresh = true
+  };
 
   const renderContent = () => {
     if (isLoading) {
@@ -123,11 +157,33 @@ export function WeatherWidget() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Weather</CardTitle>
-        {/* Description can now just show the fetched city */}
-        <CardDescription>
-          {isLoading ? 'Loading location...' : (weather ? `Current conditions for ${weather.city}` : 'Location unavailable')}
-        </CardDescription>
+        <div className="flex justify-between items-center">
+            <div>
+                <CardTitle>Weather</CardTitle>
+                <CardDescription>
+                  {isLoading ? 'Loading location...' : (weather ? `Current conditions for ${weather.city}` : 'Location unavailable')}
+                </CardDescription>
+            </div>
+            <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleRefresh}
+                            disabled={isLoading || isRefreshing}
+                            className="h-8 w-8" // Smaller button
+                        >
+                            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <span className="sr-only">Refresh Weather</span>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Refresh Weather</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
       </CardHeader>
       <CardContent>
         {renderContent()}
