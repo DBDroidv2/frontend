@@ -1,6 +1,6 @@
 # Knot Dashboard App
 
-![Knot Dashboard Animation Preview](URL_TO_YOUR_IMAGE_OR_GIF)
+![Knot Dashboard Animation Preview](/star.svg)
 
 ---
 
