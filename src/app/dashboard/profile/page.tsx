@@ -23,7 +23,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useAuth } from '@/context/AuthContext'; // Import useAuth hook
+import { useAuth, type LoginHistoryEntry } from '@/context/AuthContext'; // Import useAuth hook AND LoginHistoryEntry type
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
 // Define the profile update form schema
 const profileFormSchema = z.object({
@@ -33,11 +34,12 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
-// Define the expected shape of user data from GET /me
+// Define the expected shape of user data from GET /me (matching BackendUserProfile in context)
 interface UserProfile {
-    id: string;
+    _id: string; // Use _id as returned by backend
     email: string;
     createdAt: string;
+    loginHistory?: LoginHistoryEntry[]; // Use the imported type
     // Add displayName, etc. if applicable
 }
 
@@ -48,6 +50,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null); // Error state for form submission
   const [fetchError, setFetchError] = useState<string | null>(null); // Error state for initial data fetch
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState<UserProfile | null>(null); // State to hold fetched profile
 
   // Initialize the form
   const form = useForm<ProfileFormValues>({
@@ -80,7 +83,8 @@ export default function ProfilePage() {
           throw new Error((data as any).message || `HTTP error! status: ${response.status}`);
         }
 
-        // Populate form with fetched data
+        // Populate form and state with fetched data
+        setProfileData(data); // Store full profile data
         form.reset({ email: data.email }); // Reset form with fetched email
 
       } catch (err: any) {
@@ -185,7 +189,14 @@ export default function ProfilePage() {
                       </FormItem>
                     )}
                   />
-                  {/* Add more FormFields here for other profile data */}
+                  {/* Display other profile info */}
+                  <div className="space-y-1">
+                    <FormLabel>Account Created</FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      {profileData?.createdAt ? new Date(profileData.createdAt).toLocaleString() : 'N/A'}
+                    </p>
+                  </div>
+                  {/* Removed the single "Last Login" display */}
 
                    {error && (
                      <p className="text-sm font-medium text-destructive">{error}</p>
@@ -202,6 +213,42 @@ export default function ProfilePage() {
               </form>
             </Form>
         )}
+      </Card>
+
+      {/* Login History Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Login History</CardTitle>
+          <CardDescription>
+            Recent login attempts for your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isFetching ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          ) : fetchError ? (
+             <p className="text-sm font-medium text-destructive">Error loading history: {fetchError}</p>
+          ) : profileData?.loginHistory && profileData.loginHistory.length > 0 ? (
+            <ul className="space-y-3">
+              {profileData.loginHistory.map((entry: LoginHistoryEntry) => ( // Add type annotation
+                <li key={entry._id || entry.timestamp} className="text-sm text-muted-foreground border-b pb-2 last:border-b-0">
+                  <span className="font-medium text-foreground">
+                    {new Date(entry.timestamp).toLocaleString()}
+                  </span>
+                  <br />
+                  IP: {entry.ipAddress || 'N/A'}
+                  {entry.city && `, Location: ${entry.city}${entry.region ? `, ${entry.region}` : ''}${entry.country ? `, ${entry.country}` : ''}`}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">No login history available.</p>
+          )}
+        </CardContent>
       </Card>
     </div>
   );

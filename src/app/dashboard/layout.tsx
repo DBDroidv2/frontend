@@ -40,6 +40,10 @@ import {
 } from '@/components/ui/tooltip';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/theme-toggle'; // Import ThemeToggle
+import { Skeleton } from "../../components/ui/skeleton"; // Use relative path
+import { GlobalSearch } from '@/components/global-search'; // Import GlobalSearch
+import { Notifications } from '@/components/notifications'; // Import Notifications
 
 export default function DashboardLayout({
   children,
@@ -60,14 +64,50 @@ export default function DashboardLayout({
 
   // Render loading state or null if redirecting
   if (isLoading || !token) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+    // Skeleton loader matching the layout structure
+    return (
+      <div className="flex min-h-screen w-full flex-col">
+        {/* Skeleton Sidebar */}
+        <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
+          <div className="flex flex-col items-center gap-4 px-2 py-5">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <Skeleton className="h-10 w-10 rounded-lg" />
+          </div>
+          <div className="mt-auto flex flex-col items-center gap-4 px-2 py-5">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+          </div>
+        </aside>
+        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
+          {/* Skeleton Header */}
+          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background px-4 sm:justify-end sm:border-0 sm:bg-transparent sm:px-6">
+            {/* Mobile Skeleton Trigger */}
+            <Skeleton className="h-8 w-8 sm:hidden" />
+            {/* Right side Skeleton */}
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-8 w-8" /> {/* Theme Toggle Skeleton */}
+              <Skeleton className="h-8 w-8 rounded-full" /> {/* User Menu Skeleton */}
+            </div>
+          </header>
+          {/* Skeleton Main Content */}
+          <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+            <Skeleton className="h-32 w-full rounded-lg" /> {/* Example content skeleton */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Skeleton className="h-32 w-full rounded-lg" />
+              <Skeleton className="h-32 w-full rounded-lg" />
+              <Skeleton className="h-32 w-full rounded-lg" />
+            </div>
+          </main>
+        </div>
+      </div>
+    );
   }
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/dashboard/terminal', label: 'Terminal', icon: TerminalSquare }, // Added Terminal link
+    { href: '/dashboard/terminal', label: 'Terminal', icon: TerminalSquare },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
-    // { href: '/dashboard/settings', label: 'Settings', icon: Settings }, // Settings page not implemented yet
+    { href: '/dashboard/settings', label: 'Settings', icon: Settings }, // Added Settings link
   ];
 
   const isActive = (href: string) => {
@@ -132,8 +172,9 @@ export default function DashboardLayout({
       </aside>
 
       <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14"> {/* Adjust padding-left for desktop sidebar */}
-        {/* Mobile Header & User Menu Area */}
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:justify-end">
+        {/* Header Area */}
+        {/* Adjusted header: justify-between always, added search */}
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
            {/* Mobile Menu Trigger (Left) */}
            <Sheet>
              <SheetTrigger asChild>
@@ -152,10 +193,18 @@ export default function DashboardLayout({
             </SheetContent>
            </Sheet>
 
-           {/* User Menu (Right) */}
-           <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
+           {/* Global Search (Takes up space in the middle on larger screens) */}
+           <GlobalSearch />
+
+           {/* Right side of Header: Notifications, Theme Toggle, and User Menu */}
+           <div className="flex items-center gap-4 md:ml-auto"> {/* Added md:ml-auto to push right */}
+             <Notifications /> {/* Add the notifications button */}
+             <ThemeToggle /> {/* Add the theme toggle button */}
+
+             {/* User Menu */}
+             <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
                     variant="outline"
                     size="icon"
                     className="overflow-hidden rounded-full"
@@ -177,12 +226,14 @@ export default function DashboardLayout({
                   <Link href="/dashboard/profile" passHref>
                      <DropdownMenuItem>Profile</DropdownMenuItem>
                   </Link>
-                  {/* Add Settings link here when implemented */}
-                  {/* <Link href="/dashboard/settings" passHref><DropdownMenuItem>Settings</DropdownMenuItem></Link> */}
+                  <Link href="/dashboard/settings" passHref>
+                     <DropdownMenuItem>Settings</DropdownMenuItem>
+                  </Link>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
                 </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+           </div> {/* Close the wrapper div */}
 
         </header>
 

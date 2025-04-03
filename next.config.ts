@@ -1,7 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'openweathermap.org',
+        port: '',
+        pathname: '/img/wn/**', // Allow images from the /img/wn/ path
+      },
+    ],
+  },
+  /* other config options can go here */
 };
 
 export default nextConfig;

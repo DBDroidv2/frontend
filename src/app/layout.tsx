@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css"; // Ensure Tailwind/Shadcn base styles are loaded
 import { cn } from "@/lib/utils"; // Utility for conditional classes from Shadcn
 import { AuthProvider } from "@/context/AuthContext"; // Import the AuthProvider
+import { ThemeProvider } from "@/components/theme-provider"; // Import the ThemeProvider
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -25,10 +26,16 @@ export default function RootLayout({
           inter.variable
         )}
       >
-        <AuthProvider>
-          {/* ThemeProvider or other global providers can go here */}
-          {children}
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

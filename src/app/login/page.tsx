@@ -7,6 +7,7 @@ import * as z from "zod";
 import Link from "next/link";
 import { useRouter } from 'next/navigation'; // Import useRouter for redirection
 import { useAuth } from "@/context/AuthContext"; // Import useAuth hook
+import { getPublicIp } from "@/lib/utils"; // Import IP fetch utility
 
 import { Button } from "@/components/ui/button";
 import {
@@ -57,11 +58,18 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      // API call to backend
-      const response = await fetch('http://localhost:5000/auth/login', { // Use correct backend URL
+      // 1. Get public IP
+      const publicIp = await getPublicIp();
+      if (!publicIp) {
+        // Optionally handle error more gracefully, but for login, maybe just proceed without it
+        console.warn("Could not fetch public IP before login.");
+      }
+
+      // 2. API call to backend, including the IP
+      const response = await fetch('http://localhost:5000/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, ipAddress: publicIp }), // Add IP to request body
       });
       const data = await response.json();
 
