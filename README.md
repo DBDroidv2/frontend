@@ -1,6 +1,6 @@
 # Knot Dashboard App
 
-![Knot Dashboard Animation Preview](/star.svg)
+![Knot Dashboard Animation Preview]([/star.svg](https://github.com/DBDroidv2/frontend/blob/master/star.svg))
 
 ---
 
