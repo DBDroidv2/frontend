@@ -4,6 +4,7 @@ import "./globals.css"; // Ensure Tailwind/Shadcn base styles are loaded
 import { cn } from "@/lib/utils"; // Utility for conditional classes from Shadcn
 import { AuthProvider } from "@/context/AuthContext"; // Import the AuthProvider
 import { ThemeProvider } from "@/components/theme-provider"; // Import the ThemeProvider
+import { GlobalParticleWrapper } from "@/components/global-particle-wrapper"; // Re-import the wrapper
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -33,6 +34,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
+            <GlobalParticleWrapper /> {/* Add the conditional wrapper back */}
             {children}
           </AuthProvider>
         </ThemeProvider>

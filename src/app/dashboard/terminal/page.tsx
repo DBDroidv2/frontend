@@ -6,6 +6,9 @@ import { FitAddon } from '@xterm/addon-fit'; // Updated import
 import { WebLinksAddon } from '@xterm/addon-web-links'; // Updated import
 import '@xterm/xterm/css/xterm.css'; // Updated import for styles
 import { useAuth } from '@/context/AuthContext'; // Import the useAuth hook
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'; // Import Card components & CardDescription
+import { Button } from '@/components/ui/button'; // Import Button
+import { Power, PowerOff } from 'lucide-react'; // Import icons for toggle button
 
 const TerminalPage: React.FC = () => {
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -15,12 +18,36 @@ const TerminalPage: React.FC = () => {
   const { token, isLoading } = useAuth(); // Use the hook to get token and loading state
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false); // Track initialization state
+  const [isInitialized, setIsInitialized] = useState(false); // Track xterm.js init state
+  // Initialize based on token presence - assumes user wants session active if logged in
+  const [isSessionActive, setIsSessionActive] = useState(!!token);
+
+  // Function to manually start (if needed, though auto-start is back)
+  const startTerminal = () => {
+    setError(null);
+    setIsSessionActive(true);
+  };
+
+  // Function to stop the terminal session (sends terminate msg, then closes WS)
+  const stopTerminal = () => {
+    console.log('[TerminalPage] Stop button clicked, sending terminate message and closing WebSocket.');
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        // Send a special message to request termination
+        ws.current.send(JSON.stringify({ action: "terminate_session" }));
+    }
+    ws.current?.close(); // Close the WebSocket connection anyway
+    termInstance.current?.clear(); // Clear the terminal display
+    termInstance.current?.writeln('\r\n\x1b[33mSession stopped by user.\x1b[0m');
+    setIsSessionActive(false); // Update state
+    setIsConnected(false); // Update connection status display
+    // No need to call cleanupFunc here, ws.onclose will trigger parts of it
+  };
+
 
   useEffect(() => {
-    // Wait for auth loading, token, and ensure not already initialized
-    if (!terminalRef.current || isLoading || !token || isInitialized) {
-      console.log(`[TerminalPage] useEffect: Skipping initialization (ref:${!!terminalRef.current}, loading:${isLoading}, token:${!!token}, initialized:${isInitialized})`);
+    // Effect now runs when isSessionActive becomes true
+    if (!isSessionActive || !terminalRef.current || isLoading || !token || isInitialized) {
+      // console.log(`[TerminalPage] useEffect: Skipping initialization (active:${isSessionActive}, ref:${!!terminalRef.current}, loading:${isLoading}, token:${!!token}, initialized:${isInitialized})`);
       return;
     }
 
@@ -165,8 +192,10 @@ const TerminalPage: React.FC = () => {
           }
           ws.current = null;
           fitAddon.current = null;
-          setIsInitialized(false); // Reset flag
+          setIsInitialized(false); // Reset init flag
           setIsConnected(false); // Reset connection status
+          // If cleanup happens due to error/exit, ensure session is marked inactive
+          // setIsSessionActive(false); // Let's test without this first, rely on ws.onclose
       };
 
     }, 10); // Slightly increased timeout delay
@@ -176,21 +205,48 @@ const TerminalPage: React.FC = () => {
         clearTimeout(timerId); // Always clear timeout on cleanup
         cleanupFunc(); // Call the currently defined cleanup function
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token || undefined]); // Rerun ONLY when token changes (map null to undefined). isLoading check is inside. isInitialized prevents re-run.
+    // Rerun effect ONLY if isSessionActive becomes true
+  }, [isSessionActive, token]); // Keep token dependency for re-auth check if needed
+
+  // Removed useEffect that auto-started based on token
 
   return (
-    <div className="flex flex-col h-full p-4 bg-gray-100 dark:bg-gray-900">
-      <h1 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">PowerShell Terminal</h1>
-      {!token && !isLoading && <p className="text-red-500">Authentication token not found. Please log in.</p>}
-      {isLoading && <p className="text-blue-500">Checking authentication...</p>}
-      {error && <p className="text-red-500 mb-2">Error: {error}</p>}
-      <div ref={terminalRef} className="flex-grow w-full h-full bg-black" />
-      {/* Status Indicator */}
-      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-        Status: {isConnected ? <span className="text-green-500">Connected</span> : <span className="text-red-500">Disconnected</span>}
-      </div>
-    </div>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="flex flex-row items-center justify-between"> {/* Use flex for button alignment */}
+        <div>
+          <CardTitle>PowerShell Terminal</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground mt-1">
+            Status: {isSessionActive && !error ? (isConnected ? <span className="text-green-500">Connected</span> : <span className="text-yellow-500">Connecting...</span>) : <span className="text-gray-500">Stopped</span>}
+            {error && <span className="ml-2 text-red-500">({error})</span>}
+            {isLoading && !token && <span className="ml-2 text-blue-500">Checking auth...</span>}
+            {!token && !isLoading && <span className="ml-2 text-red-500">Not logged in.</span>}
+          </CardDescription>
+        </div>
+        {/* Start/Stop Toggle Button */}
+        <Button
+          variant="outline"
+          size="lg" // Make button larger
+          onClick={isSessionActive ? stopTerminal : startTerminal}
+          disabled={isLoading || !token}
+          className="w-32" // Give fixed width
+        >
+          {isSessionActive ? (
+            <>
+              <PowerOff className="mr-2 h-5 w-5 text-red-500" /> Stop
+            </>
+          ) : (
+            <>
+              <Power className="mr-2 h-5 w-5 text-green-500" /> Start
+            </>
+          )}
+        </Button>
+      </CardHeader>
+      <CardContent className="flex-grow p-0">
+        {/* Terminal container - always render the div */}
+        {/* Adding padding here */}
+        <div ref={terminalRef} className="w-full h-full p-2 bg-muted/30 rounded-b-md" />
+      </CardContent>
+    </Card>
   );
 };
 

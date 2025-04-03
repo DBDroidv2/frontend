@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout'; // Import the hook
-// import { useRouter } from 'next/navigation'; // Needed for redirects
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 // Define the shape of the user object (adjust as needed)
 interface User {
@@ -10,6 +10,7 @@ interface User {
   email: string;
   createdAt?: string; // Optional, from backend
   loginHistory?: LoginHistoryEntry[]; // Added
+  displayName?: string | null; // Added
   // Removed lastLoginIp, lastLoginAt
 }
 
@@ -30,6 +31,7 @@ interface BackendUserProfile {
   email: string;
   createdAt?: string;
   loginHistory?: LoginHistoryEntry[]; // Added
+  displayName?: string | null; // Added
   // Removed lastLoginIp, lastLoginAt
 }
 
@@ -39,9 +41,10 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean; // Indicates if initial auth status (localStorage check) is loading
   isLoggingIn: boolean; // Indicates if post-login profile fetch is happening
-  login: (token: string, initialUserData: User) => Promise<void>; // Make return explicit
+  isLoggingOut: boolean; // Added state to track logout process
+  // Allow login to optionally update user data without a new token
+  login: (newToken: string | null, userData: User) => Promise<void>;
   logout: () => void;
-  // Add signup function if needed, or handle it separately in the signup component
 }
 
 // Create the context with a default value (or undefined and check for it)
@@ -58,16 +61,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true); // For initial localStorage check
   const [isLoggingIn, setIsLoggingIn] = useState(false); // For post-login fetch
-  // const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // Add logout state
+  const router = useRouter(); // Get router instance
 
   const handleLogout = useCallback(() => {
+    setIsLoggingOut(true); // Set flag immediately
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
     setToken(null);
     setUser(null);
     console.log("User logged out (inactive or manual).");
-    // Optionally redirect: router.push('/login?reason=inactive');
-  }, []); // No dependencies needed if it only calls setters
+    router.push('/'); // Redirect to landing page on logout
+    // Reset flag after a short delay to allow redirect to happen
+    setTimeout(() => setIsLoggingOut(false), 50);
+  }, [router]); // Add router to dependency array
 
   // Setup inactivity timeout hook
   // Pass the token state to enable/disable the hook
@@ -124,18 +131,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
   // End of re-enabled block
 
-  const login = async (newToken: string, initialUserData: User) => { // Make async
-    setIsLoggingIn(true); // Start loading indicator for post-login fetch
-    // Immediately set token to allow subsequent API calls
-    setToken(newToken);
-    localStorage.setItem('authToken', newToken);
+  // Modified login function: accepts null for token if just updating user data
+  const login = async (newToken: string | null, userData: User) => {
+    setIsLoggingIn(true); // Indicate activity (could be login or profile update fetch)
+
+    const tokenToUse = newToken ?? token; // Use new token if provided, else existing one
+
+    if (!tokenToUse) {
+        console.error("[AuthContext] Login/Update called without a token.");
+        logout(); // Ensure clean state if no token
+        setIsLoggingIn(false);
+        return;
+    }
+
+    // If a new token was provided, update state and storage
+    if (newToken) {
+        setToken(newToken);
+        localStorage.setItem('authToken', newToken);
+    }
 
     try {
+        // Always fetch the latest full user profile using the token we decided to use
         // Fetch the full user profile AFTER setting the token
         console.log("[AuthContext] Fetching full user profile after login...");
         const response = await fetch('http://localhost:5000/api/users/me', {
             headers: {
-                'Authorization': `Bearer ${newToken}`,
+                'Authorization': `Bearer ${tokenToUse}`, // Use determined token
             },
         });
         // Type the fetched data correctly using the BackendUserProfile interface
@@ -176,6 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token,
     isLoading, // Initial load check
     isLoggingIn, // Post-login fetch check
+    isLoggingOut, // Logout process check
     login,
     logout,
   };

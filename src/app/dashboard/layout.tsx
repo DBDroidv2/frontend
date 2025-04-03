@@ -11,6 +11,7 @@ import {
   LogOut,
   PanelLeft,
   UserCircle, // Fallback icon
+  Info, // Import Info icon
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -44,20 +45,22 @@ import { ThemeToggle } from '@/components/theme-toggle'; // Import ThemeToggle
 import { Skeleton } from "../../components/ui/skeleton"; // Use relative path
 import { GlobalSearch } from '@/components/global-search'; // Import GlobalSearch
 import { Notifications } from '@/components/notifications'; // Import Notifications
+import { motion } from 'framer-motion'; // Import motion
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, token, isLoading, logout } = useAuth();
+  // Add isLoggingOut to the destructured context values
+  const { user, token, isLoading, isLoggingOut, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname(); // Get current path for active link styling
 
   useEffect(() => {
-    // Redirect unauthenticated users to login page
-    if (!isLoading && !token) {
-      console.log("Dashboard Layout: No token found, redirecting to login.");
+    // Redirect unauthenticated users to login page *only if* not loading, no token, AND not currently logging out
+    if (!isLoading && !token && !isLoggingOut) {
+      console.log("Dashboard Layout: Auth check complete, no token, not logging out -> redirecting to login.");
       router.push('/login');
     }
   }, [isLoading, token, router]);
@@ -107,7 +110,8 @@ export default function DashboardLayout({
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/dashboard/terminal', label: 'Terminal', icon: TerminalSquare },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
-    { href: '/dashboard/settings', label: 'Settings', icon: Settings }, // Added Settings link
+    { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+    { href: '/about', label: 'About', icon: Info }, // Updated About link path
   ];
 
   const isActive = (href: string) => {
@@ -229,6 +233,9 @@ export default function DashboardLayout({
                   <Link href="/dashboard/settings" passHref>
                      <DropdownMenuItem>Settings</DropdownMenuItem>
                   </Link>
+                  <Link href="/about" passHref> {/* Updated About link path */}
+                     <DropdownMenuItem>About</DropdownMenuItem>
+                  </Link>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -237,10 +244,17 @@ export default function DashboardLayout({
 
         </header>
 
-        {/* Main Content Area */}
-        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+        {/* Main Content Area with Animation */}
+        <motion.main
+          key={pathname} // Animate when pathname changes
+          className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8"
+          initial={{ opacity: 0, y: 10 }} // Start slightly down
+          animate={{ opacity: 1, y: 0 }} // Animate to final position
+          exit={{ opacity: 0, y: -10 }} // Exit slightly up (requires AnimatePresence wrapper for exit)
+          transition={{ duration: 0.4, ease: "easeInOut" }} // Slightly longer duration
+        >
           {children}
-        </main>
+        </motion.main>
       </div>
     </div>
   );

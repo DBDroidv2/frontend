@@ -102,7 +102,8 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="grid gap-6">
+    // Adjust container max-width
+    <div className="mx-auto max-w-2xl">
       <Card>
         <CardHeader>
           <CardTitle>Change Password</CardTitle>
@@ -117,7 +118,7 @@ export default function SettingsPage() {
                 control={form.control}
                 name="currentPassword"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem> {/* Removed grid class */}
                     <FormLabel>Current Password</FormLabel>
                     <FormControl>
                       <Input type="password" disabled={isLoading} {...field} />
@@ -130,7 +131,7 @@ export default function SettingsPage() {
                 control={form.control}
                 name="newPassword"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem> {/* Removed grid class */}
                     <FormLabel>New Password</FormLabel>
                     <FormControl>
                       <Input type="password" disabled={isLoading} {...field} />
@@ -143,7 +144,7 @@ export default function SettingsPage() {
                 control={form.control}
                 name="confirmPassword"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem> {/* Removed grid class */}
                     <FormLabel>Confirm New Password</FormLabel>
                     <FormControl>
                       <Input type="password" disabled={isLoading} {...field} />
@@ -164,6 +165,6 @@ export default function SettingsPage() {
         </Form>
       </Card>
       {/* Add other settings sections here later */}
-    </div>
+    </div> // Close the container div
   );
 }

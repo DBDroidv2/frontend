@@ -14,6 +14,8 @@ import { TerminalSquare, User } from 'lucide-react'; // Import icons
 import { WeatherWidget } from '@/components/weather-widget'; // Import WeatherWidget
 import { IpDisplayWidget } from '@/components/ip-display-widget'; // Import IP Widget
 import React from 'react'; // Import React for useEffect
+import { motion } from 'framer-motion'; // Import motion
+import Image from 'next/image'; // Import Next Image
 
 export default function DashboardPage() {
   const { user, isLoggingIn } = useAuth(); // Get user info and the new isLoggingIn state
@@ -23,24 +25,54 @@ export default function DashboardPage() {
     console.log("[DashboardPage] Render - isLoggingIn:", isLoggingIn, "User:", user);
   }, [user, isLoggingIn]);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1, // Stagger animation of children
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    },
+  };
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <motion.div
+      className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible" // Animate when component mounts
+    >
       {/* Welcome Widget */}
-      <Card className="lg:col-span-2"> {/* Span 2 columns on larger screens */}
-        <CardHeader>
-          <CardTitle>Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}!</CardTitle>
+      <motion.div variants={itemVariants} className="lg:col-span-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Welcome back{user?.displayName ? `, ${user.displayName}` : (user?.email ? `, ${user.email.split('@')[0]}` : '')}!</CardTitle>
           <CardDescription>Here's a quick overview of your Knot dashboard.</CardDescription>
         </CardHeader>
         <CardContent>
           <p>You can manage your profile, access the terminal, and view settings.</p>
           {/* Add more introductory text or links if needed */}
-        </CardContent>
-      </Card>
+        </CardContent> {/* Added missing closing tag */}
+        </Card>
+      </motion.div>
 
       {/* Quick Actions Widget */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+      <motion.div variants={itemVariants}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
           <CardDescription>Jump right into common tasks.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
@@ -55,31 +87,54 @@ export default function DashboardPage() {
             </Link>
           </Button>
           {/* Add more actions later, e.g., Settings */}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Placeholder Stats Widget */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Stats</CardTitle>
+      <motion.div variants={itemVariants}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Stats</CardTitle>
           <CardDescription>Usage statistics (coming soon).</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">Detailed usage information will be displayed here.</p>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Weather Widget */}
-      {/* Weather Widget */}
-      {/* Weather Widget */}
-      {/* Weather Widget */}
-      <WeatherWidget />
+      <motion.div variants={itemVariants}>
+        <WeatherWidget />
+      </motion.div>
 
       {/* IP Display Widget */}
+      <motion.div variants={itemVariants}>
       <IpDisplayWidget loginHistory={user?.loginHistory} isLoading={isLoggingIn} />
+      </motion.div>
+
+      {/* Example Image Card Widget */}
+      <motion.div variants={itemVariants}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Example Image</CardTitle>
+            <CardDescription>Animated card with an image.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-center p-6">
+             <Image
+                src="/next.svg" // Path relative to /public
+                alt="Next.js Logo"
+                width={100}
+                height={100}
+                className="dark:invert" // Invert colors in dark mode for visibility
+             />
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Add more widgets here as needed */}
 
-    </div>
+    </motion.div>
   );
 }

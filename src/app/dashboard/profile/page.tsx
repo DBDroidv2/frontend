@@ -29,7 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 // Define the profile update form schema
 const profileFormSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
-  // Add other fields here if they become updatable (e.g., displayName: z.string().min(1))
+  displayName: z.string().max(50, { message: "Display name cannot exceed 50 characters." }).optional().nullable(), // Add displayName
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -40,6 +40,7 @@ interface UserProfile {
     email: string;
     createdAt: string;
     loginHistory?: LoginHistoryEntry[]; // Use the imported type
+    displayName?: string | null; // Add displayName
     // Add displayName, etc. if applicable
 }
 
@@ -57,7 +58,7 @@ export default function ProfilePage() {
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       email: "", // Will be populated by fetch
-      // Set other defaults if needed
+      displayName: "", // Add default
     },
   });
 
@@ -85,7 +86,7 @@ export default function ProfilePage() {
 
         // Populate form and state with fetched data
         setProfileData(data); // Store full profile data
-        form.reset({ email: data.email }); // Reset form with fetched email
+        form.reset({ email: data.email, displayName: data.displayName || "" }); // Reset form with fetched data
 
       } catch (err: any) {
         console.error("Fetch profile error:", err);
@@ -131,18 +132,12 @@ export default function ProfilePage() {
       console.log('Profile update successful:', data);
       setSuccessMessage("Profile updated successfully!");
 
-      // OPTIONAL: Update the user object in AuthContext if the backend returns full updated user
-      // This requires the backend PUT /me to return the updated user object
-      // And the AuthContext's login/update function to handle this merge
-      if (user && data) {
-          // Create a new user object merging existing with updated data
-          const updatedAuthUser = { ...user, ...data };
-          // We might need a dedicated 'updateUser' in AuthContext,
-          // but reusing 'login' might work if it correctly replaces/merges the user object
-          // Ensure the 'login' function in AuthContext updates localStorage too
-          // login(token, updatedAuthUser); // Re-call login to update context state
-          console.warn("AuthContext user state might need manual update logic after profile change.");
-      }
+      // Refresh the user state in AuthContext to reflect changes
+      // Pass null for token to indicate we're just refreshing user data
+      // Pass the updated data from the PUT response (or an empty object if needed)
+      // The login function will now refetch /me using the existing token
+      await login(null, data); // Re-fetch and update user context
+
 
 
     } catch (err: any) {
@@ -154,7 +149,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <div>
+    // Adjust container max-width and add gap between cards
+    <div className="mx-auto max-w-2xl space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>My Profile</CardTitle>
@@ -189,6 +185,25 @@ export default function ProfilePage() {
                       </FormItem>
                     )}
                   />
+                   <FormField
+                    control={form.control}
+                    name="displayName"
+                    render={({ field }) => (
+                      <FormItem className="grid gap-2">
+                        <FormLabel>Display Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Your Name"
+                            disabled={isLoading || isFetching}
+                            {...field}
+                            // Ensure value is handled correctly for null/undefined
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   {/* Display other profile info */}
                   <div className="space-y-1">
                     <FormLabel>Account Created</FormLabel>
@@ -205,7 +220,7 @@ export default function ProfilePage() {
                         <p className="text-sm font-medium text-green-600">{successMessage}</p>
                     )}
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="mt-4"> {/* Add top margin */}
                   <Button type="submit" disabled={isLoading || isFetching}>
                     {isLoading ? "Saving..." : "Save Changes"}
                   </Button>
@@ -250,6 +265,6 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </div> // Close the container div
   );
 }
