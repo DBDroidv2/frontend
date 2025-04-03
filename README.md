@@ -1,6 +1,8 @@
 # Knot Dashboard App
 
-<img src="https://raw.githubusercontent.com/DBDroidv2/frontend/master/star.svg" alt="Animated Background" style="width: 100%; max-width: 800px;">
+<div style="width: 100%; max-width: 800px;">
+  <img src="https://raw.githubusercontent.com/DBDroidv2/frontend/master/star.svg" alt="Animated Background" style="width: 100%;">
+</div>
 
 ---
 
