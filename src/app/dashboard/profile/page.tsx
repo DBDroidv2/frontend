@@ -230,41 +230,6 @@ export default function ProfilePage() {
         )}
       </Card>
 
-      {/* Login History Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Login History</CardTitle>
-          <CardDescription>
-            Recent login attempts for your account.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isFetching ? (
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          ) : fetchError ? (
-             <p className="text-sm font-medium text-destructive">Error loading history: {fetchError}</p>
-          ) : profileData?.loginHistory && profileData.loginHistory.length > 0 ? (
-            <ul className="space-y-3">
-              {profileData.loginHistory.map((entry: LoginHistoryEntry) => ( // Add type annotation
-                <li key={entry._id || entry.timestamp} className="text-sm text-muted-foreground border-b pb-2 last:border-b-0">
-                  <span className="font-medium text-foreground">
-                    {new Date(entry.timestamp).toLocaleString()}
-                  </span>
-                  <br />
-                  IP: {entry.ipAddress || 'N/A'}
-                  {entry.city && `, Location: ${entry.city}${entry.region ? `, ${entry.region}` : ''}${entry.country ? `, ${entry.country}` : ''}`}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">No login history available.</p>
-          )}
-        </CardContent>
-      </Card>
     </div> // Close the container div
   );
 }

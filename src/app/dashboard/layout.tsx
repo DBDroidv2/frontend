@@ -1,25 +1,32 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react'; // Import useState
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
-  Home,
+  LayoutDashboard, // Changed from Home
   TerminalSquare,
   User,
+  Home, // Added for Home link
   Settings,
   LogOut,
   PanelLeft,
   UserCircle, // Fallback icon
   Info, // Import Info icon
+  Mail, // Import Mail icon for Contact
+  Map, // Import Map icon for Roadmap
+  ChevronsLeft, // Icon for collapse
+  ChevronsRight, // Icon for expand
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
+  SheetTitle, // Import SheetTitle
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'; // Import VisuallyHidden
 import {
   Avatar,
   AvatarFallback,
@@ -56,6 +63,7 @@ export default function DashboardLayout({
   const { user, token, isLoading, isLoggingOut, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname(); // Get current path for active link styling
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false); // State for sidebar
 
   useEffect(() => {
     // Redirect unauthenticated users to login page *only if* not loading, no token, AND not currently logging out
@@ -107,22 +115,29 @@ export default function DashboardLayout({
   }
 
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/', label: 'Home', icon: Home }, // Added Home link
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }, // Changed icon
     { href: '/dashboard/terminal', label: 'Terminal', icon: TerminalSquare },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
     { href: '/about', label: 'About', icon: Info }, // Updated About link path
+    { href: '/contact', label: 'Contact', icon: Mail }, // Added Contact link
+    { href: '/roadmap', label: 'Roadmap', icon: Map }, // Added Roadmap link
   ];
 
   const isActive = (href: string) => {
     if (href === '/dashboard' && pathname === '/dashboard') return true;
-    return href !== '/dashboard' && pathname.startsWith(href);
+     // Adjust isActive logic slightly for root path '/'
+     if (href === '/') return pathname === '/';
+     if (href === '/dashboard' && pathname === '/dashboard') return true;
+     return href !== '/dashboard' && pathname.startsWith(href);
   }
 
-  const SidebarNav = ({ isMobile = false }: { isMobile?: boolean }) => (
+  // Update SidebarNav to accept isExpanded prop
+  const SidebarNav = ({ isMobile = false, isExpanded = false }: { isMobile?: boolean, isExpanded?: boolean }) => (
      <nav className={cn(
         "grid gap-1 p-2",
-        isMobile ? "" : "items-start" // Removed mt-auto for mobile to keep items at top
+        isMobile ? "" : "items-start"
       )}>
         {navItems.map((item) => (
             <TooltipProvider key={item.href} delayDuration={0}>
@@ -131,17 +146,22 @@ export default function DashboardLayout({
                         <Link href={item.href}>
                              <Button
                                 variant={isActive(item.href) ? 'secondary' : 'ghost'}
-                                size={isMobile ? "default" : "icon"} // Use default size on mobile
-                                className={cn("rounded-lg w-full", isMobile ? "justify-start" : "")}
+                                // Adjust size and class based on mobile/expanded state
+                                size={isMobile ? "default" : isExpanded ? "default" : "icon"}
+                                className={cn(
+                                  "rounded-lg w-full transition-all duration-300 ease-in-out",
+                                  (isMobile || isExpanded) ? "justify-start" : "justify-center" // Center icon when collapsed
+                                )}
                                 aria-label={item.label}
                              >
-                                <item.icon className={cn("size-5", isMobile ? "mr-4" : "")} />
-                                {isMobile && <span>{item.label}</span>}
-                                {!isMobile && <span className="sr-only">{item.label}</span>}
+                                <item.icon className={cn("size-5", (isMobile || isExpanded) ? "mr-4" : "mr-0")} />
+                                {(isMobile || isExpanded) && <span>{item.label}</span>}
+                                {!isMobile && !isExpanded && <span className="sr-only">{item.label}</span>}
                             </Button>
                          </Link>
                     </TooltipTrigger>
-                    {!isMobile && (
+                    {/* Only show tooltip when sidebar is collapsed on desktop */}
+                    {!isMobile && !isExpanded && (
                         <TooltipContent side="right" sideOffset={5}>
                            {item.label}
                         </TooltipContent>
@@ -154,31 +174,58 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      {/* Desktop Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
-         <SidebarNav />
+      {/* Desktop Sidebar - Apply conditional width and transition */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background sm:flex transition-all duration-300 ease-in-out",
+        isSidebarExpanded ? "w-56" : "w-14" // Conditional width
+      )}
+      // Add hover events to control expansion
+      onMouseEnter={() => setIsSidebarExpanded(true)}
+      onMouseLeave={() => setIsSidebarExpanded(false)}
+      >
+         {/* Pass isExpanded state */}
+         <SidebarNav isExpanded={isSidebarExpanded} />
          <nav className="mt-auto grid gap-1 p-2">
+             {/* Removed Sidebar Toggle Button */}
              {/* Desktop Logout Button */}
              <TooltipProvider delayDuration={0}>
                 <Tooltip>
-                    <TooltipTrigger asChild>
-                       <Button variant="ghost" size="icon" className="mt-auto rounded-lg" aria-label="Logout" onClick={logout}>
-                             <LogOut className="size-5" />
-                             <span className="sr-only">Logout</span>
-                       </Button>
-                    </TooltipTrigger>
-                     <TooltipContent side="right" sideOffset={5}>
-                       Logout
-                    </TooltipContent>
-                </Tooltip>
+                     <TooltipTrigger asChild>
+                         {/* Adjust logout button based on expanded state */}
+                         <Button
+                             variant="ghost"
+                             size={isSidebarExpanded ? "default" : "icon"}
+                             className={cn("rounded-lg w-full", isSidebarExpanded ? "justify-start" : "")}
+                             aria-label="Logout"
+                             onClick={logout}
+                         >
+                             <LogOut className={cn("size-5", isSidebarExpanded ? "mr-4" : "")} />
+                             {isSidebarExpanded && <span>Logout</span>}
+                             {!isSidebarExpanded && <span className="sr-only">Logout</span>}
+                         </Button>
+                     </TooltipTrigger>
+                     {/* Only show tooltip when collapsed */}
+                     {!isSidebarExpanded && (
+                         <TooltipContent side="right" sideOffset={5}>
+                             Logout
+                         </TooltipContent>
+                     )}
+                 </Tooltip>
              </TooltipProvider>
          </nav>
       </aside>
 
-      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14"> {/* Adjust padding-left for desktop sidebar */}
+      {/* Main Content Area - Apply conditional padding-left and transition */}
+      <div className={cn(
+        "flex flex-col sm:gap-4 sm:py-4 transition-all duration-300 ease-in-out",
+        isSidebarExpanded ? "sm:pl-56" : "sm:pl-14" // Conditional padding
+      )}>
         {/* Header Area */}
-        {/* Adjusted header: justify-between always, added search */}
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+        <header className={cn(
+          "sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6",
+          // Adjust header padding based on sidebar state? Optional.
+          // isSidebarExpanded ? "sm:pl-56" : "sm:pl-14"
+        )}>
            {/* Mobile Menu Trigger (Left) */}
            <Sheet>
              <SheetTrigger asChild>
@@ -188,6 +235,10 @@ export default function DashboardLayout({
                 </Button>
              </SheetTrigger>
              <SheetContent side="left" className="sm:max-w-xs flex flex-col">
+                {/* Add visually hidden title for accessibility */}
+                <VisuallyHidden>
+                  <SheetTitle>Mobile Navigation Menu</SheetTitle>
+                </VisuallyHidden>
                 <SidebarNav isMobile={true} />
                 {/* Mobile Logout Button */}
                  <Button variant="ghost" className="mt-auto justify-start" aria-label="Logout" onClick={logout}>
@@ -236,7 +287,16 @@ export default function DashboardLayout({
                   <Link href="/about" passHref> {/* Updated About link path */}
                      <DropdownMenuItem>About</DropdownMenuItem>
                   </Link>
+                  <Link href="/contact" passHref> {/* Added Contact link */}
+                     <DropdownMenuItem>Contact</DropdownMenuItem>
+                  </Link>
+                  <Link href="/roadmap" passHref> {/* Added Roadmap link */}
+                     <DropdownMenuItem>Roadmap</DropdownMenuItem>
+                  </Link>
                   <DropdownMenuSeparator />
+                  <Link href="/" passHref> {/* Added Home link */}
+                     <DropdownMenuItem>Home</DropdownMenuItem>
+                  </Link>
                   <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

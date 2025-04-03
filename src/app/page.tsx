@@ -12,18 +12,19 @@ import { LandingParticles } from '@/components/landing-particles'; // Re-import 
 
 export default function LandingPage() {
   // Check auth status on client-side to potentially redirect
+  // Get auth status but don't redirect automatically
   const { user, isLoading } = useAuth();
-  const router = useRouter();
+  // const router = useRouter(); // No longer needed for redirect
 
-  React.useEffect(() => {
-      if (!isLoading && user) {
-          // If logged in, redirect to dashboard immediately
-          router.replace('/dashboard');
-      }
-  }, [user, isLoading, router]);
+  // React.useEffect(() => {
+  //     if (!isLoading && user) {
+  //         // If logged in, redirect to dashboard immediately - REMOVED
+  //         // router.replace('/dashboard');
+  //     }
+  // }, [user, isLoading, router]);
 
-  // Show loading indicator while checking auth status or if user is logged in (during redirect)
-  if (isLoading || user) {
+  // Show loading indicator only while checking auth status
+  if (isLoading) {
       return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   }
 
@@ -62,13 +63,13 @@ export default function LandingPage() {
           variants={itemVariants}
           className="text-4xl font-bold tracking-tight sm:text-6xl"
         >
-          Welcome to Knot Dashboard
+          Knot Dashboard
         </motion.h1>
         <motion.p
           variants={itemVariants}
           className="mt-6 text-lg leading-8 text-muted-foreground"
         >
-          Your all-in-one solution for managing tasks, interacting with a web terminal, and keeping your profile up-to-date. Access your workspace from anywhere.
+          Knot Dashboard provides a seamless interface to manage your profile, access a powerful web terminal, and view relevant information like local weather, all in one place. Boost your productivity and stay organized.
         </motion.p>
         <motion.div
           variants={itemVariants}
@@ -108,7 +109,7 @@ export default function LandingPage() {
               <User className="mx-auto h-10 w-10 text-primary" />
               <h3 className="mt-6 font-semibold">Profile Management</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Keep your email and display name up-to-date. View login history.
+                Easily update your email and display name to keep your account details current.
               </p>
             </motion.div>
              <motion.div variants={itemVariants}>
@@ -116,6 +117,47 @@ export default function LandingPage() {
               <h3 className="mt-6 font-semibold">IP-Based Weather</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 See current weather conditions based on your location.
+              </p>
+            </motion.div>
+          </div>
+        </motion.div>
+
+       {/* How It Works Section */}
+       <motion.div
+          className="mt-20 max-w-4xl w-full px-4" // Consistent styling
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.0, duration: 0.6 }} // Slightly delayed animation
+        >
+          <h2 className="text-center text-2xl font-semibold leading-8 mb-10">
+            How It Works
+          </h2>
+          <div className="grid grid-cols-1 gap-x-8 gap-y-10 text-center md:grid-cols-3">
+            {/* Step 1: Sign Up/Log In */}
+            <motion.div variants={itemVariants}>
+              {/* Placeholder Icon - Consider LogIn or UserPlus */}
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto h-10 w-10 text-primary"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+              <h3 className="mt-6 font-semibold">1. Create Account or Log In</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Quickly sign up for a new account or log in if you already have one.
+              </p>
+            </motion.div>
+            {/* Step 2: Access Dashboard */}
+            <motion.div variants={itemVariants}>
+               {/* Placeholder Icon - Consider LayoutDashboard */}
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto h-10 w-10 text-primary"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+              <h3 className="mt-6 font-semibold">2. Access Your Dashboard</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Once logged in, you'll land directly on your personal dashboard.
+              </p>
+            </motion.div>
+            {/* Step 3: Utilize Features */}
+            <motion.div variants={itemVariants}>
+               {/* Placeholder Icon - Consider Terminal or Settings */}
+               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto h-10 w-10 text-primary"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg>
+              <h3 className="mt-6 font-semibold">3. Utilize Features</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Use the interactive terminal, manage your profile, check the weather, and more.
               </p>
             </motion.div>
           </div>

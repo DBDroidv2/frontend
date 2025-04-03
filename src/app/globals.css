@@ -120,3 +120,25 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* --- RGB Glow Animation --- */
+@keyframes rgb-glow {
+  0% { box-shadow: 0 0 6px 2px hsla(0, 100%, 50%, 0.7), 0 0 8px 2px hsla(0, 100%, 50%, 0.5) inset; }
+  16% { box-shadow: 0 0 6px 2px hsla(60, 100%, 50%, 0.7), 0 0 8px 2px hsla(60, 100%, 50%, 0.5) inset; }
+  33% { box-shadow: 0 0 6px 2px hsla(120, 100%, 50%, 0.7), 0 0 8px 2px hsla(120, 100%, 50%, 0.5) inset; }
+  50% { box-shadow: 0 0 6px 2px hsla(180, 100%, 50%, 0.7), 0 0 8px 2px hsla(180, 100%, 50%, 0.5) inset; }
+  66% { box-shadow: 0 0 6px 2px hsla(240, 100%, 50%, 0.7), 0 0 8px 2px hsla(240, 100%, 50%, 0.5) inset; }
+  83% { box-shadow: 0 0 6px 2px hsla(300, 100%, 50%, 0.7), 0 0 8px 2px hsla(300, 100%, 50%, 0.5) inset; }
+  100% { box-shadow: 0 0 6px 2px hsla(360, 100%, 50%, 0.7), 0 0 8px 2px hsla(360, 100%, 50%, 0.5) inset; }
+}
+
+/* Define the glow class */
+.card-glow-rgb {
+  @apply relative overflow-visible; /* Ensure glow isn't clipped */
+  /* Use the existing border-radius from the component's classes */
+  animation: rgb-glow 4s linear infinite;
+}
+
+@layer components {
+  /* Keep this layer if other component styles exist or might be added */
+}
